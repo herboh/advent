@@ -1,98 +1,59 @@
 def load_data(path):
-    with open(path, 'r') as f:
-        return [line.rstrip('\n') for line in f]
+    with open(path) as f:
+        lines = [line.replace('\n', '') for line in f]
 
-def grab_equations (math_hw):
-    equations = []
-    operator_row = math_hw[3]
+    cols = list(zip(*lines))
+    return lines, cols
 
-    operator_index = []
-    for i, char in enumerate(operator_row):
-            if char  != ' ':
-                operator_index.append(i)
+def solve_cephalopod(cols):
+    print(f"________break_______")
+    equation = []
+    operator = None
 
-    for idx, start in enumerate(operator_index):
-        if idx + 1 < len(operator_index):
-            end = operator_index[idx+1] - 1
-        else:
-            end = len(operator_row)
+    for col in cols:
+        # stop at fully blank column
+        if all(ch == ' ' for ch in col):
+            if equation and operator:
+                yield equation, operator
+            equation = []
+            operator = None
+            continue
 
-        equation_block = [row[start:end] for row in math_hw[0:4]]
-        equations.append(equation_block)
-    return equations
+        if col[-1] != ' ':
+            operator = col[-1]
 
-def setup_cephalapod_math(equations):
-    reversed_columns = []
-    for eq in equations:
-        reversed_eq = [row[::-1] for row in eq]
-        reversed_columns.append(reversed_eq)
+        col_string = ''.join(col[:-1]).strip()
+        nums = [int(n) for n in col_string.split()]
+        equation.append(nums)
 
-    results = []
+    if equation and operator:
+        yield equation, operator
 
-    for block in reversed_columns:
-        operator = None
-        block_nums = []
-        num_columns = len(block[0])
+def calculate(equation, operator):
+    nums = [n for group in equation for n in group]
 
-        for col_idx in range(len(block[0])):  # Iterate over character positions
-            column = ''.join(row[col_idx] for row in block) 
-            print(f"Column {col_idx}: '{column}'")
-
-            if column[-1] in ['*', '+']:
-                operator = column[-1]
-                num_str = column[:-1].strip()
-                if num_str:
-                    block_nums.append(int(num_str))
-            else:
-                num_str = column.strip()
-                if num_str:
-                    block_nums.append(int(num_str))
-
-        result = 0
-        if operator == '*':
-            result = 1
-            for num in block_nums:
-                result *= num
-        elif operator == '+':
-            result = sum(block_nums)
-
-        print(f"  -> Result: {result}")
-        results.append(result)
-
-    return reversed_columns, results
-
-def calculate_equations(column_str):
-    operator = column_str[-1]  # Get sign
-    numbers = []
-    digits = [int(char) for char in column_str[:-1] if char.isdigit()]
     if operator == '*':
         result = 1
-        for digit in digits:
-            result *= digit
+        for n in nums:
+            result *= n
         return result
     elif operator == '+':
-        result = sum(digits)
-        return result
-    else:
-        print(f"Warning: Unknown operator '{operator}', returning 0")
-        return 0
+        return sum(nums)
+    return None
 
 def main() -> None:
-    math_hw = load_data("test_input.txt")
-    #math_hw = load_data("input.txt")
-    print(f"Loaded data:{math_hw}")
+    lines, cols = load_data("input.txt")
+    print(f"Loaded data Lines: {lines}")
+    print(f"Loaded data Cols: {cols}")
 
-    problem = grab_equations(math_hw)
-    print(f"These are the equations {problem}")
+    total = 0
 
-    reversed_data, results = setup_cephalapod_math(problem)  # Unpack the tuple
-    print(f"Reversed data: {reversed_data}")
+    for i, (equation, operator) in enumerate(solve_cephalopod(cols), start=1):
+        result = calculate(equation, operator)
+        total += result
+        print(f"Col {i} Results: {result} | operator={operator} | equation={equation}")
 
-    print(f"------------------------------------------/n")
-    print(f"Results: {results}")
-
-    print(f"Sum of results: {sum(results)}")
+    print(f"\nTOTAL: {total}")
 
 if __name__ == "__main__":
     main()
-
