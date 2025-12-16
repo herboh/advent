@@ -6,7 +6,6 @@ def load_data(path):
     return lines, cols
 
 def solve_cephalopod(cols):
-    print(f"________break_______")
     equation = []
     operator = None
 
@@ -29,6 +28,19 @@ def solve_cephalopod(cols):
     if equation and operator:
         yield equation, operator
 
+def solve_normal(lines):
+    matrix = [line.split() for line in lines if line.strip()]
+    cols = len(matrix[0]) if matrix else 0
+
+    for col_idx in range(cols):
+        column = [matrix[row][col_idx] for row in range(len(matrix))]
+        operator = column[-1]
+        if operator not in ['+', '*']:
+            continue
+        nums = [[int(x)] for x in column[:-1]]
+        if nums:
+            yield nums, operator
+
 def calculate(equation, operator):
     nums = [n for group in equation for n in group]
 
@@ -39,21 +51,24 @@ def calculate(equation, operator):
         return result
     elif operator == '+':
         return sum(nums)
-    return None
+    else:
+        print(f"WARNING: Unknown operator '{operator}' in equation {equation}")
+        return 0
 
 def main() -> None:
     lines, cols = load_data("input.txt")
-    print(f"Loaded data Lines: {lines}")
-    print(f"Loaded data Cols: {cols}")
-
-    total = 0
-
-    for i, (equation, operator) in enumerate(solve_cephalopod(cols), start=1):
-        result = calculate(equation, operator)
-        total += result
-        print(f"Col {i} Results: {result} | operator={operator} | equation={equation}")
-
-    print(f"\nTOTAL: {total}")
+    solvers = [("Part 1: NORMAL (Row-wise)", "Row", solve_normal(lines)),
+        ("Part 2: CEPHALOPOD (Column-wise)", "Col", solve_cephalopod(cols))]
+    for title, label, solver in solvers:
+        print(f"\n=== {title} ===")
+        total = 0
+        for i, (equation, operator) in enumerate(solver, start=1):
+            result = calculate(equation, operator)
+            total += result
+            flat_nums = [n for group in equation for n in group]
+            expression = f" {operator} ".join(str(n) for n in flat_nums)
+            print(f"{label} {i} Results: {expression} = {result}")
+        print(f"{title.split(':')[0].strip()} TOTAL: {total}")
 
 if __name__ == "__main__":
     main()
